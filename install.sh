@@ -1,233 +1,305 @@
 #!/bin/bash
-#═══════════════════════════════════════════════════════════════════════════════
-# 🚀 DIPO STUDIO INSTALLER
-#═══════════════════════════════════════════════════════════════════════════════
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# 🚀 DIPO STUDIO - INSTALLATION SCRIPT
+# ═══════════════════════════════════════════════════════════════════════════════
+
+set -e
 
 # Цвета
-PURPLE='\033[38;5;135m'
-BLUE='\033[38;5;75m'
-CYAN='\033[38;5;51m'
-PINK='\033[38;5;213m'
-GREEN='\033[38;5;82m'
-YELLOW='\033[38;5;226m'
-RED='\033[38;5;196m'
-WHITE='\033[38;5;255m'
-GRAY='\033[38;5;245m'
-BOLD='\033[1m'
-DIM='\033[2m'
-RESET='\033[0m'
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+PURPLE='\033[0;35m'
+CYAN='\033[0;36m'
+WHITE='\033[1;37m'
+NC='\033[0m' # No Color
 
-# Очистка экрана
-clear
+# Версия
+VERSION="2.0.0"
+REPO_URL="https://github.com/MARADANIL/dipo-studio"
+RAW_URL="https://raw.githubusercontent.com/MARADANIL/dipo-studio/main"
 
-# Анимация загрузки
-loading_animation() {
-    local frames=("⠋" "⠙" "⠹" "⠸" "⠼" "⠴" "⠦" "⠧" "⠇" "⠏")
-    local message="$1"
-    local duration=${2:-2}
-    local end=$((SECONDS + duration))
+# ASCII Art
+show_banner() {
+    echo -e "${PURPLE}"
+    cat << 'EOF'
     
-    while [ $SECONDS -lt $end ]; do
-        for frame in "${frames[@]}"; do
-            printf "\r${CYAN}  ${frame}${RESET} ${message}"
-            sleep 0.1
-        done
-    done
-    printf "\r${GREEN}  ✓${RESET} ${message}\n"
-}
-
-# Прогресс бар
-progress_bar() {
-    local current=$1
-    local total=$2
-    local width=40
-    local percent=$((current * 100 / total))
-    local filled=$((current * width / total))
-    local empty=$((width - filled))
-    
-    printf "\r  ${GRAY}[${RESET}"
-    printf "${PURPLE}"
-    for ((i=0; i<filled; i++)); do printf "█"; done
-    printf "${GRAY}"
-    for ((i=0; i<empty; i++)); do printf "░"; done
-    printf "${GRAY}]${RESET} ${WHITE}${percent}%%${RESET}"
-}
-
-# Главный баннер
-echo ""
-echo -e "${PURPLE}${BOLD}"
-cat << 'EOF'
     ██████╗ ██╗██████╗  ██████╗ 
     ██╔══██╗██║██╔══██╗██╔═══██╗
     ██║  ██║██║██████╔╝██║   ██║
     ██║  ██║██║██╔═══╝ ██║   ██║
     ██████╔╝██║██║     ╚██████╔╝
     ╚═════╝ ╚═╝╚═╝      ╚═════╝ 
+                     STUDIO
+    
 EOF
-echo -e "${RESET}"
-
-echo -e "${BLUE}${BOLD}    ███████╗████████╗██╗   ██╗██████╗ ██╗ ██████╗ ${RESET}"
-echo -e "${CYAN}${BOLD}    ██╔════╝╚══██╔══╝██║   ██║██╔══██╗██║██╔═══██╗${RESET}"
-echo -e "${PURPLE}${BOLD}    ███████╗   ██║   ██║   ██║██║  ██║██║██║   ██║${RESET}"
-echo -e "${PINK}${BOLD}    ╚════██║   ██║   ██║   ██║██║  ██║██║██║   ██║${RESET}"
-echo -e "${PURPLE}${BOLD}    ███████║   ██║   ╚██████╔╝██████╔╝██║╚██████╔╝${RESET}"
-echo -e "${BLUE}${BOLD}    ╚══════╝   ╚═╝    ╚═════╝ ╚═════╝ ╚═╝ ╚═════╝ ${RESET}"
-echo ""
-echo -e "${GRAY}    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo -e "${WHITE}${BOLD}       ⚡ REVOLUTIONARY CODE EDITOR v3.0 ⚡${RESET}"
-echo -e "${GRAY}    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo ""
-
-sleep 1
-
-# Определяем систему
-echo -e "${CYAN}${BOLD}  ▸ Определение системы...${RESET}"
-sleep 0.5
-
-if [ -d "/data/data/com.termux" ]; then
-    INSTALL_DIR="$HOME/.local/bin"
-    PROFILE="$HOME/.bashrc"
-    SYSTEM="termux"
-    echo -e "${GREEN}  ✓${RESET} ${PURPLE}📱 Termux${RESET} обнаружен"
-elif [[ "$OSTYPE" == "darwin"* ]]; then
-    INSTALL_DIR="/usr/local/bin"
-    PROFILE="$HOME/.zshrc"
-    SYSTEM="macos"
-    echo -e "${GREEN}  ✓${RESET} ${PURPLE}🍎 macOS${RESET} обнаружен"
-else
-    INSTALL_DIR="$HOME/.local/bin"
-    PROFILE="$HOME/.bashrc"
-    SYSTEM="linux"
-    echo -e "${GREEN}  ✓${RESET} ${PURPLE}🐧 Linux${RESET} обнаружен"
-fi
-
-sleep 0.3
-
-# Проверяем Python
-echo -e "${CYAN}${BOLD}  ▸ Проверка Python...${RESET}"
-sleep 0.5
-
-if command -v python3 &> /dev/null; then
-    PY_VERSION=$(python3 --version 2>&1 | cut -d' ' -f2)
-    echo -e "${GREEN}  ✓${RESET} Python ${PURPLE}${PY_VERSION}${RESET} найден"
-else
-    echo -e "${RED}  ✗${RESET} Python3 не найден!"
+    echo -e "${CYAN}    🚀 Powerful Code Editor for Mobile Development${NC}"
+    echo -e "${WHITE}    Version: ${VERSION}${NC}"
     echo ""
-    echo -e "${YELLOW}  Установите Python:${RESET}"
-    if [ "$SYSTEM" = "termux" ]; then
-        echo -e "${WHITE}    pkg install python${RESET}"
+}
+
+# Определение платформы
+detect_platform() {
+    if [ -d "/data/data/com.termux" ]; then
+        PLATFORM="termux"
+        INSTALL_DIR="$PREFIX/bin"
+        PKG_MANAGER="pkg"
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        PLATFORM="linux"
+        INSTALL_DIR="$HOME/.local/bin"
+        if command -v apt &> /dev/null; then
+            PKG_MANAGER="apt"
+        elif command -v dnf &> /dev/null; then
+            PKG_MANAGER="dnf"
+        elif command -v pacman &> /dev/null; then
+            PKG_MANAGER="pacman"
+        fi
+    elif [[ "$OSTYPE" == "darwin"* ]]; then
+        PLATFORM="macos"
+        INSTALL_DIR="/usr/local/bin"
+        PKG_MANAGER="brew"
+    elif [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]]; then
+        PLATFORM="windows"
+        INSTALL_DIR="$HOME/bin"
     else
-        echo -e "${WHITE}    sudo apt install python3${RESET}"
+        PLATFORM="unknown"
+        INSTALL_DIR="$HOME/.local/bin"
     fi
+}
+
+# Логирование
+log_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
+
+log_success() {
+    echo -e "${GREEN}[✓]${NC} $1"
+}
+
+log_warning() {
+    echo -e "${YELLOW}[!]${NC} $1"
+}
+
+log_error() {
+    echo -e "${RED}[✗]${NC} $1"
+}
+
+# Проверка зависимостей
+check_dependencies() {
+    log_info "Проверка зависимостей..."
+    
+    # Python
+    if command -v python3 &> /dev/null; then
+        PYTHON_VERSION=$(python3 --version 2>&1 | cut -d' ' -f2)
+        log_success "Python $PYTHON_VERSION найден"
+    elif command -v python &> /dev/null; then
+        PYTHON_VERSION=$(python --version 2>&1 | cut -d' ' -f2)
+        log_success "Python $PYTHON_VERSION найден"
+    else
+        log_warning "Python не найден, устанавливаем..."
+        install_python
+    fi
+    
+    # Git (опционально)
+    if command -v git &> /dev/null; then
+        GIT_VERSION=$(git --version | cut -d' ' -f3)
+        log_success "Git $GIT_VERSION найден"
+    else
+        log_warning "Git не найден (опционально для git-интеграции)"
+    fi
+    
+    # curl или wget
+    if command -v curl &> /dev/null; then
+        DOWNLOADER="curl -sL"
+        log_success "curl найден"
+    elif command -v wget &> /dev/null; then
+        DOWNLOADER="wget -qO-"
+        log_success "wget найден"
+    else
+        log_error "Требуется curl или wget"
+        exit 1
+    fi
+}
+
+# Установка Python
+install_python() {
+    case $PLATFORM in
+        termux)
+            pkg install python -y
+            ;;
+        linux)
+            case $PKG_MANAGER in
+                apt)
+                    sudo apt update && sudo apt install python3 -y
+                    ;;
+                dnf)
+                    sudo dnf install python3 -y
+                    ;;
+                pacman)
+                    sudo pacman -S python --noconfirm
+                    ;;
+            esac
+            ;;
+        macos)
+            brew install python3
+            ;;
+    esac
+}
+
+# Создание директорий
+create_directories() {
+    log_info "Создание директорий..."
+    
+    mkdir -p "$INSTALL_DIR"
+    mkdir -p "$HOME/.dipo"
+    mkdir -p "$HOME/.dipo/plugins"
+    mkdir -p "$HOME/.dipo/themes"
+    mkdir -p "$HOME/.dipo/sessions"
+    mkdir -p "$HOME/.dipo/recovery"
+    
+    log_success "Директории созданы"
+}
+
+# Скачивание DIPO
+download_dipo() {
+    log_info "Скачивание DIPO Studio..."
+    
+    DIPO_PATH="$INSTALL_DIR/dipo"
+    
+    # Попытка скачать с GitHub
+    if $DOWNLOADER "$RAW_URL/dipo" > "$DIPO_PATH.tmp" 2>/dev/null; then
+        mv "$DIPO_PATH.tmp" "$DIPO_PATH"
+        chmod +x "$DIPO_PATH"
+        log_success "DIPO Studio скачан"
+    else
+        log_error "Не удалось скачать DIPO Studio"
+        log_info "Попробуйте установить вручную:"
+        echo "  git clone $REPO_URL ~/.dipo-studio"
+        echo "  cp ~/.dipo-studio/dipo $INSTALL_DIR/"
+        exit 1
+    fi
+}
+
+# Добавление в PATH
+add_to_path() {
+    log_info "Проверка PATH..."
+    
+    if [[ ":$PATH:" == *":$INSTALL_DIR:"* ]]; then
+        log_success "$INSTALL_DIR уже в PATH"
+        return
+    fi
+    
+    # Определить файл конфигурации shell
+    if [ -n "$ZSH_VERSION" ]; then
+        SHELL_RC="$HOME/.zshrc"
+    elif [ -n "$BASH_VERSION" ]; then
+        SHELL_RC="$HOME/.bashrc"
+    else
+        SHELL_RC="$HOME/.profile"
+    fi
+    
+    # Добавить в PATH
+    echo "" >> "$SHELL_RC"
+    echo "# DIPO Studio" >> "$SHELL_RC"
+    echo "export PATH=\"\$PATH:$INSTALL_DIR\"" >> "$SHELL_RC"
+    
+    log_success "Добавлено в $SHELL_RC"
+    log_warning "Выполните: source $SHELL_RC"
+}
+
+# Проверка установки
+verify_installation() {
+    log_info "Проверка установки..."
+    
+    if [ -f "$INSTALL_DIR/dipo" ]; then
+        if [ -x "$INSTALL_DIR/dipo" ]; then
+            log_success "DIPO Studio установлен успешно!"
+            echo ""
+            echo -e "${GREEN}╔══════════════════════════════════════════════════╗${NC}"
+            echo -e "${GREEN}║           ✅ УСТАНОВКА ЗАВЕРШЕНА!               ║${NC}"
+            echo -e "${GREEN}╠══════════════════════════════════════════════════╣${NC}"
+            echo -e "${GREEN}║                                                  ║${NC}"
+            echo -e "${GREEN}║  Запуск:     ${WHITE}dipo${GREEN}                              ║${NC}"
+            echo -e "${GREEN}║  Справка:    ${WHITE}dipo --help${GREEN}                       ║${NC}"
+            echo -e "${GREEN}║  AI:         ${WHITE}dipo ai --setup${GREEN}                   ║${NC}"
+            echo -e "${GREEN}║                                                  ║${NC}"
+            echo -e "${GREEN}╠══════════════════════════════════════════════════╣${NC}"
+            echo -e "${GREEN}║  📱 Telegram: ${CYAN}@MARADANIL${GREEN}                       ║${NC}"
+            echo -e "${GREEN}║  📢 Канал: ${CYAN}t.me/DIPO_OFFICIAL${GREEN}                  ║${NC}"
+            echo -e "${GREEN}╚══════════════════════════════════════════════════╝${NC}"
+            return 0
+        else
+            log_error "Файл не исполняемый"
+            return 1
+        fi
+    else
+        log_error "Файл не найден"
+        return 1
+    fi
+}
+
+# Удаление
+uninstall() {
+    log_info "Удаление DIPO Studio..."
+    
+    rm -f "$INSTALL_DIR/dipo"
+    rm -rf "$HOME/.dipo"
+    
+    log_success "DIPO Studio удалён"
+}
+
+# Обновление
+update() {
+    log_info "Обновление DIPO Studio..."
+    download_dipo
+    log_success "DIPO Studio обновлён до версии $VERSION"
+}
+
+# Главная функция
+main() {
+    show_banner
+    
+    # Обработка аргументов
+    case "${1:-}" in
+        --uninstall|-u)
+            detect_platform
+            uninstall
+            exit 0
+            ;;
+        --update)
+            detect_platform
+            update
+            exit 0
+            ;;
+        --help|-h)
+            echo "Использование: $0 [опция]"
+            echo ""
+            echo "Опции:"
+            echo "  (без опций)   Установить DIPO Studio"
+            echo "  --update      Обновить до последней версии"
+            echo "  --uninstall   Удалить DIPO Studio"
+            echo "  --help        Показать эту справку"
+            exit 0
+            ;;
+    esac
+    
+    # Установка
+    detect_platform
+    log_info "Платформа: $PLATFORM"
+    log_info "Директория: $INSTALL_DIR"
     echo ""
-    exit 1
-fi
+    
+    check_dependencies
+    create_directories
+    download_dipo
+    add_to_path
+    verify_installation
+    
+    echo ""
+    log_info "Для запуска выполните: dipo"
+}
 
-sleep 0.3
-
-# Проверяем curl
-echo -e "${CYAN}${BOLD}  ▸ Проверка curl...${RESET}"
-sleep 0.3
-
-if command -v curl &> /dev/null; then
-    echo -e "${GREEN}  ✓${RESET} curl найден"
-else
-    echo -e "${YELLOW}  ⚠${RESET} curl не найден, устанавливаю..."
-    if [ "$SYSTEM" = "termux" ]; then
-        pkg install curl -y > /dev/null 2>&1
-    else
-        sudo apt install curl -y > /dev/null 2>&1
-    fi
-    echo -e "${GREEN}  ✓${RESET} curl установлен"
-fi
-
-sleep 0.5
-
-# Создаём директорию
-echo ""
-echo -e "${GRAY}  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo -e "${PURPLE}${BOLD}  📦 УСТАНОВКА${RESET}"
-echo -e "${GRAY}  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo ""
-
-mkdir -p "$INSTALL_DIR"
-echo -e "${GREEN}  ✓${RESET} Директория ${CYAN}$INSTALL_DIR${RESET}"
-
-sleep 0.3
-
-# Скачиваем
-echo -e "${CYAN}${BOLD}  ▸ Загрузка Dipo Studio...${RESET}"
-echo ""
-
-REPO_URL="https://raw.githubusercontent.com/dipodev20/dipo-studio/main/dipo"
-
-# Анимация прогресса
-for i in {1..40}; do
-    progress_bar $i 40
-    sleep 0.03
-done
-echo ""
-
-# Реальная загрузка
-if curl -fsSL "$REPO_URL" -o "$INSTALL_DIR/dipo" 2>/dev/null; then
-    echo -e "${GREEN}  ✓${RESET} Файл загружен"
-else
-    echo -e "${RED}  ✗${RESET} Ошибка загрузки!"
-    echo -e "${YELLOW}  Проверьте интернет-соединение${RESET}"
-    exit 1
-fi
-
-sleep 0.3
-
-# Делаем исполняемым
-chmod +x "$INSTALL_DIR/dipo"
-echo -e "${GREEN}  ✓${RESET} Права установлены"
-
-sleep 0.3
-
-# Добавляем в PATH
-if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
-    echo "export PATH=\"$INSTALL_DIR:\$PATH\"" >> "$PROFILE"
-    echo -e "${GREEN}  ✓${RESET} Добавлено в PATH"
-else
-    echo -e "${GREEN}  ✓${RESET} PATH уже настроен"
-fi
-
-sleep 0.5
-
-# Финальный баннер
-echo ""
-echo -e "${GRAY}  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo ""
-echo -e "${GREEN}${BOLD}  ✨ УСТАНОВКА ЗАВЕРШЕНА! ✨${RESET}"
-echo ""
-echo -e "${GRAY}  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo ""
-echo -e "${WHITE}${BOLD}  📋 КОМАНДЫ:${RESET}"
-echo ""
-echo -e "${CYAN}    dipo${RESET}              ${GRAY}— открыть редактор${RESET}"
-echo -e "${CYAN}    dipo file.py${RESET}      ${GRAY}— открыть файл${RESET}"
-echo -e "${CYAN}    dipo --ai-setup${RESET}   ${GRAY}— настроить AI${RESET}"
-echo -e "${CYAN}    dipo --help${RESET}       ${GRAY}— справка${RESET}"
-echo ""
-echo -e "${GRAY}  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo ""
-echo -e "${WHITE}${BOLD}  ⌨️  ГОРЯЧИЕ КЛАВИШИ:${RESET}"
-echo ""
-echo -e "${PURPLE}    F1${RESET}   ${GRAY}— Справка${RESET}         ${PURPLE}F5${RESET}   ${GRAY}— Запуск кода${RESET}"
-echo -e "${PURPLE}    F10${RESET}  ${GRAY}— AI помощник${RESET}     ${PURPLE}F6${RESET}   ${GRAY}— Проводник${RESET}"
-echo -e "${PURPLE}    ^S${RESET}   ${GRAY}— Сохранить${RESET}       ${PURPLE}^Q${RESET}   ${GRAY}— Выйти${RESET}"
-echo ""
-echo -e "${GRAY}  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo ""
-echo -e "${YELLOW}${BOLD}  ⚡ СЛЕДУЮЩИЙ ШАГ:${RESET}"
-echo ""
-echo -e "${WHITE}    source $PROFILE${RESET}"
-echo ""
-echo -e "${GRAY}  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo ""
-echo -e "${PURPLE}  📱 Telegram: ${CYAN}@MARADANIL${RESET}"
-echo -e "${BLUE}  🔗 ${CYAN}https://t.me/DIPO_OFFICIAL${RESET}"
-echo ""
-echo -e "${GRAY}  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${RESET}"
-echo ""
+# Запуск
+main "$@"
